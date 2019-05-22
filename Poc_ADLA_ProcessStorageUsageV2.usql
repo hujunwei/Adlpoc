@@ -1,0 +1,51 @@
+@StorageUsageV2 =
+ EXTRACT 
+	Date DateTime,
+	Cloud string,
+	Cluster string,
+	TenantSuffix string,
+	ClusterType string,
+	Geo string,
+	Region string,
+	DataCenter string,
+	SubscriptionGuid string,
+	AccountName string,
+	IsSRP bool?,
+	IsXIO bool?,
+	AccountType string,
+	ResourceType string,
+	ResourceSubtype string,
+	MaxUsageBytes double,
+	AvgUsageBytes double,
+	ProvisionedDisks double,
+	TotalTransactions long,
+	TotalIngress long?,
+	TotalEgress long?,   
+	BytesHoursCaptured sbyte,
+	TransactionHoursCaptured sbyte,
+	IsManagedDisk bool?,
+	IsImputed bool?,
+	PhysicalAvailabilityZone string,
+	AvailabilityZoneCode string,
+	CloudCustomerGUID:Guid?,
+	OfferType string,
+	AccountTag string,
+	GeoSetup string,
+	IsV2Account bool?,
+	IsReadyForCustomer bool?,
+	IOps double
+FROM "/2019/05/20/Data_2019_05_20.csv"
+USING Extractors.Csv(encoding: Encoding.UTF8);
+
+
+@StorageWestUsUsage = 
+	SELECT 
+		Region,
+		SUM(AvgUsageBytes) / Math.Pow(2, 50) AS UsagePB,
+	FROM 
+		StorageUsageV2
+	WHERE Region.ToUpper() == "WEST US" && ClusterType.ToUpper() == "STORAGE";
+
+OUTPUT @StorageUsageV2 
+TO "/Output/2019/05/20/StorageUsageV2Processed.csv" 
+USING Outputters.Csv();

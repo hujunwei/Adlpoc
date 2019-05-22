@@ -1,0 +1,30 @@
+//#DECLARE startDateTime      DateTime = DateTime.Parse(@@startDateTime@@);
+#DECLARE startDateTime      DateTime = DateTime.Parse("2019-05-21");
+
+
+#DECLARE capacity_location string = String.Format(@"/shares/MCIO.ARP.prod/PublishedData/MCIO.MSCloudUtilization.Prod/AzureClusterCapacity/{0:yyyy}/{0:MM}/{0:dd}/", @startDateTime);
+#DECLARE pattern string = String.Format(@"%h/Data_{0:yyyy}_{0:MM}_{0:dd}_%h.ss", @startDateTime);
+capacityStreamSet = SSTREAM 
+    SPARSE STREAMSET @capacity_location
+        PATTERN @pattern
+        RANGE __hour = ["00", "23"];
+
+rs_hours = SELECT DISTINCT __hour AS hour FROM capacityStreamSet ;
+
+rs_lastHour = SELECT TOP 1 hour FROM rs_hours ORDER BY hour DESC;
+
+
+rs_capacity = SELECT a.*
+    FROM capacityStreamSet AS a INNER JOIN rs_lastHour AS b
+         ON a.__hour == b.hour;
+
+rs_capacityForDate = 
+			SELECT  Cluster.ToUpper() AS Cluster,
+                    SellableCapacityUnit,
+                    AdjustedSellableCapacityMapper.GetSellableCapacity(ClusterType, AdjustedSellableCapacity, SellableCapacity) AS PlannedSellableCapacity
+            FROM rs_capacity
+            WHERE CapacityDate == @startDateTime.Date
+                AND SellableCapacityUnit == "TB";
+
+
+OUTPUT rs_capacityForDate TO SSTREAM @"/local/ADLPOC/rs_capacityForDate.ss";
