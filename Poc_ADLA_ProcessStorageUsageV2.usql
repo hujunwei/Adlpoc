@@ -27,7 +27,7 @@
 	IsImputed bool?,
 	PhysicalAvailabilityZone string,
 	AvailabilityZoneCode string,
-	CloudCustomerGUID:Guid?,
+	CloudCustomerGUID Guid?,
 	OfferType string,
 	AccountTag string,
 	GeoSetup string,
@@ -41,11 +41,13 @@ USING Extractors.Csv(encoding: Encoding.UTF8);
 @StorageWestUsUsage = 
 	SELECT 
 		Region,
-		SUM(AvgUsageBytes) / Math.Pow(2, 50) AS UsagePB,
+		SUM(AvgUsageBytes) / Math.Pow(2, 50) AS UsagePB
 	FROM 
-		StorageUsageV2
-	WHERE Region.ToUpper() == "WEST US" && ClusterType.ToUpper() == "STORAGE";
+		@StorageUsageV2
+	WHERE Region.ToUpper() == "WEST US" && ClusterType.ToUpper() == "STORAGE"
+	GROUP BY
+		Region;
 
-OUTPUT @StorageUsageV2 
+OUTPUT @StorageWestUsUsage 
 TO "/Output/2019/05/20/StorageUsageV2Processed.csv" 
 USING Outputters.Csv();
