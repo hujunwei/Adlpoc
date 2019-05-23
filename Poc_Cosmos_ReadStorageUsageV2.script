@@ -1,0 +1,18 @@
+#DECLARE dateTime                   DateTime = DateTime.Parse(@@startDateTime@@);
+#DECLARE startDateTime              string   =  @dateTime.ToString("yyyy-MM-dd");
+#DECLARE endDateTime                string   =  @dateTime.AddDays(1).ToString("yyyy-MM-dd");
+#DECLARE storageUsageView           string   =  @"/shares/MCIO.CapacityUtilization.Prod/PublishedViews/Views/StorageUsageV2.view";
+#DECLARE expirationInDays           string = "90";
+#DECLARE outputStorageUsageV2EntityName string = "StorageUsageV2Csv";
+#DECLARE outputStorageUsageV2CsvPath   string = string.Format("/local/PublishedData/{0}/{1}/Data_{2}.csv", @outputStorageUsageV2EntityName, @dateTime.ToString("yyyy/MM/dd"), @dateTime.ToString("yyyy_MM_dd"));
+
+rs_storageUsageV2 = VIEW @storageUsageView PARAMS (
+                                               strStartDate = @startDateTime, 
+                                               strEndDate = @endDateTime,
+                                               isUsageAdjusted = true);
+
+
+OUTPUT rs_storageUsageV2
+TO @outputStorageUsageV2CsvPath
+WITH STREAMEXPIRY @expirationInDays
+USING DefaultTextOutputter(encoding:System.Text.Encoding.UTF8, delimiter: ',', escape: true);
