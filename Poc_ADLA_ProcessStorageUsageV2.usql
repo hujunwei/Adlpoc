@@ -1,3 +1,9 @@
+DECLARE @dateTime DateTime = DateTime.Parse(@windowStartTime);
+DECLARE @inputEntityName string = "StorageUsageV2Csv";
+DECLARE @outputEntityName string = "StorageUsageV2Processed";
+DECLARE @inputPath string = string.Format("local/CopiedData/{0}/{1}/Data_{2}.csv", @inputEntityName, @dateTime.ToString("yyyy/MM/dd"), @dateTime.ToString("yyyy_MM_dd"));
+DECLARE @outputPath string = string.Format("local/ProcessedData/{0}/{1}/Data_{2}.csv", @inputEntityName, @dateTime.ToString("yyyy/MM/dd"), @dateTime.ToString("yyyy_MM_dd"));
+
 @StorageUsageV2 =
  EXTRACT 
 	Date DateTime,
@@ -34,9 +40,8 @@
 	IsV2Account bool?,
 	IsReadyForCustomer bool?,
 	IOps double
-FROM "/2019/05/20/Data_2019_05_20.csv"
+FROM @inputPath
 USING Extractors.Csv(encoding: Encoding.UTF8);
-
 
 @StorageWestUsUsage = 
 	SELECT 
@@ -44,10 +49,10 @@ USING Extractors.Csv(encoding: Encoding.UTF8);
 		SUM(AvgUsageBytes) / Math.Pow(2, 50) AS UsagePB
 	FROM 
 		@StorageUsageV2
-	WHERE Region.ToUpper() == "WEST US" && ClusterType.ToUpper() == "STORAGE"
+	WHERE ClusterType.ToUpper() == "STORAGE"
 	GROUP BY
 		Region;
 
 OUTPUT @StorageWestUsUsage 
-TO "/Output/2019/05/20/StorageUsageV2Processed.csv" 
-USING Outputters.Csv();
+TO @outputPath
+USING Outputters.Csv(outputHeader:true);
