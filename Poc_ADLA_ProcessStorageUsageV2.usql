@@ -43,7 +43,7 @@ DECLARE @outputPath string = string.Format("local/ProcessedData/{0}/{1}/Data_{2}
 FROM @inputPath
 USING Extractors.Csv(encoding: Encoding.UTF8);
 
-@StorageWestUsUsage = 
+@StorageUsageV2Processed = 
 	SELECT 
 		Region,
 		SUM(AvgUsageBytes) / Math.Pow(2, 50) AS UsagePB
@@ -53,6 +53,6 @@ USING Extractors.Csv(encoding: Encoding.UTF8);
 	GROUP BY
 		Region;
 
-OUTPUT @StorageWestUsUsage 
+OUTPUT @StorageUsageV2Processed 
 TO @outputPath
 USING Outputters.Csv(outputHeader:true);
