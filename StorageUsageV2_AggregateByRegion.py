@@ -21,7 +21,7 @@ month_str = windowStartTime.strftime("%m")
 day_str = windowStartTime.strftime("%d")
 
 # Create Path parameter
-input_filename = "Data_" + year_str + "_" + month_str + "_" + "day_str" + ".csv"
+input_filename = "Data_" + year_str + "_" + month_str + "_" + day_str + ".csv"
 input_directory = "abfss://storagedata@msuadlspocgen2.dfs.core.windows.net/CopiedData/StorageUsageV2Csv/" + year_str + "/" + month_str + "/" + day_str + "/"
 input_path = input_directory + input_filename
 output_filename = input_filename
@@ -71,7 +71,7 @@ storageusagev2_storage = storageusagev2.where(upper(storageusagev2.ClusterType) 
 
 storageusagev2_storage_grouped_by_region = (storageusagev2_storage
 .groupBy('Region')
-.agg(pyspark.sql.functions.sum('AvgUsageBytes').alias('Usage'))
+.agg(sum('AvgUsageBytes').alias('Usage'))
 .withColumn('Usage', col('Usage') / 2**50)
 .select('Region','Usage'))
 
