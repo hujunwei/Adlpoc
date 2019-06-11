@@ -1,0 +1,58 @@
+SET @@InternalDebug = "USqlFirstParty:on";
+
+DECLARE @outputEntityName string = "StorageUsageV2Processed";
+DECLARE @inputPath string = "local/storageusage/Data_2019_06_04.ss";
+DECLARE @outputPath string = "local/storageusage/StorageUsageV2_processed.csv";
+
+@StorageUsageV2 =
+ EXTRACT 
+	Date DateTime,
+	Cloud string,
+	Cluster string,
+	TenantSuffix string,
+	ClusterType string,
+	Geo string,
+	Region string,
+	DataCenter string,
+	SubscriptionGuid string,
+	AccountName string,
+	IsSRP bool?,
+	IsXIO bool?,
+	AccountType string,
+	ResourceType string,
+	ResourceSubtype string,
+	MaxUsageBytes double,
+	AvgUsageBytes double,
+	ProvisionedDisks double,
+	TotalTransactions long,
+	TotalIngress long?,
+	TotalEgress long?,   
+	BytesHoursCaptured sbyte,
+	TransactionHoursCaptured sbyte,
+	IsManagedDisk bool?,
+	IsImputed bool?,
+	PhysicalAvailabilityZone string,
+	AvailabilityZoneCode string,
+	CloudCustomerGUID Guid?,
+	OfferType string,
+	AccountTag string,
+	GeoSetup string,
+	IsV2Account bool?,
+	IsReadyForCustomer bool?,
+	IOps double
+FROM @inputPath
+USING Extractors.SStream(encoding: Encoding.UTF8);
+
+@StorageUsageV2Processed = 
+	SELECT 
+		Region,
+		SUM(AvgUsageBytes) / Math.Pow(2, 50) AS UsagePB
+	FROM 
+		@StorageUsageV2
+	WHERE ClusterType.ToUpper() == "STORAGE"
+	GROUP BY
+		Region;
+
+OUTPUT @StorageUsageV2Processed 
+TO @outputPath
+USING Outputters.Csv(outputHeader:true);
