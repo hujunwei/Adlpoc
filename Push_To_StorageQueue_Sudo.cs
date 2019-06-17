@@ -23,7 +23,7 @@ public void CreateQueueAndSendMessage(List<FabricUsageModel> table)
 }
 
 // Listen to Storage Queue and get message body
-public override async void Execute([QueueTrigger("TestQueue")]string message, TextWriter log)
+public void Execute([QueueTrigger("TestQueue")]string message, TextWriter log)
 {
     var table = JsonConvert.DeserializeObject<List<FabricUsageModel>>(message);
 
