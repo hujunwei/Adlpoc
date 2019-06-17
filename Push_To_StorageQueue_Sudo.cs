@@ -1,67 +1,36 @@
 // Create Storage Queue and Send Message
-public void CreateQueueAndSendMessage()
+// If queue exists, calling this will not create a new queue, instead, use same queue.
+public void CreateQueueAndSendMessage(List<FabricUsageModel> table)
 {
-    var queueName = "";
-    var queueMessage = "";
-    var queueHelper = new QueueHelper(StorageAccount, StorageKey);
-    queueHelper.CreateQueue(queueName);
-    queueHelper.PutMessage(queueName, queueMessage);       
+    var storageUrl = "https//<storage_account_name>.queue.core.windows.net/";
+    var storageKey = "<storage_account_key>";
+    var queueName = "TestQueue";
+    // Serialize Table as string
+    var queueMessageInJson = JsonConvert.SerializeObject(aList);;
+
+    // Create a storage queue with queueName
+    CreateRESTRequest("PUT", queueName, storageUrl, storageKey);
+    
+    // Add serialized table as message body
+    var messageBodyBytes = new UTF8Encoding().GetBytes(queueMessageInJson);
+    var messageBodyBase64 = Convert.ToBase64String(messageBodyBytes);
+    var message = "<QueueMessage><MessageText>" + messageBodyBase64 + "</MessageText></QueueMessage>";
+    
+    // Push table to queue
+    CreateRESTRequest("POST", queueName + "/messages", message, storageUrl, storageKey);   
+    
+    return; 
 }
 
-// Queue Helper Class
-public class QueueHelper : RESTHelper
+// Listen to Storage Queue and get message body
+public override async void Execute([QueueTrigger("TestQueue")]string message, TextWriter log)
 {
-    public QueueHelper(string storageAccount, string storageKey)
-        : base("http://" + storageAccount + ".queue.core.windows.net/", storageAccount, storageKey)
-    {
+    var table = JsonConvert.DeserializeObject<List<FabricUsageModel>>(message);
+
+    foreach (var row in table) {
+        SqlClient.WriteToSQL(row);
     }
 
-    public bool CreateQueue(string queue)
-    {
-        return Retry(delegate
-        {
-            try
-            {
-                var response = CreateRESTRequest("PUT", queue).GetResponse() as HttpWebResponse;
-                // ReSharper disable once PossibleNullReferenceException
-                response.Close();
-                return true;
-            }
-            catch (WebException ex)
-            {
-                if (ex.Status == WebExceptionStatus.ProtocolError &&
-                    ex.Response != null &&
-                    // ReSharper disable once PossibleNullReferenceException
-                    (int) (ex.Response as HttpWebResponse).StatusCode == 409)
-                    return false;
-
-                throw;
-            }
-        });
-    }
-
-    public bool PutMessage(string queue, string messageBody)
-    {
-        return Retry(delegate
-        {
-            try
-            {
-                var messageBodyBytes = new UTF8Encoding().GetBytes(messageBody);
-                var messageBodyBase64 = Convert.ToBase64String(messageBodyBytes);
-                var message = "<QueueMessage><MessageText>" + messageBodyBase64 + "</MessageText></QueueMessage>";
-                var response = CreateRESTRequest("POST", queue + "/messages", message).GetResponse() as HttpWebResponse;
-                response.Close();
-                return true;
-            }
-            catch (WebException ex)
-            {
-                if (ex.Status == WebExceptionStatus.ProtocolError &&
-                    ex.Response != null &&
-                    (int) (ex.Response as HttpWebResponse).StatusCode == 409)
-                    return false;
-
-                throw;
-            }
-        });
-    }
+    return;
 }
+
