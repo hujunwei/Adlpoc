@@ -2,8 +2,8 @@
 # Mount ADLS GEN1 file system to Databricks - Onetime Job
 
 # configs = {"dfs.adls.oauth2.access.token.provider.type": "ClientCredential",
-#            "dfs.adls.oauth2.client.id": "ac24f3c9-b960-4acb-93dd-0c9bea511952",
-#            "dfs.adls.oauth2.credential": dbutils.secrets.get(scope = "junweiscope", key = "appkey"),
+#            "dfs.adls.oauth2.client.id": "SECRET",
+#            "dfs.adls.oauth2.credential": dbutils.secrets.get(scope = "SECRET", key = "SECRET"),
 #            "dfs.adls.oauth2.refresh.url": "https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/oauth2/token"}
 
 # dbutils.fs.mount(
@@ -17,7 +17,7 @@
 
 spark.conf.set(
   "fs.azure.account.key.msuadlspocgen2.dfs.core.windows.net",
-  dbutils.secrets.get(scope = "junweiscope", key = "msuadlsgen2pocaccesskey"))
+  dbutils.secrets.get(scope = "SECRET", key = "SECRET"))
 
 # COMMAND ----------
 
